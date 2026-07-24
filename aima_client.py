@@ -62,7 +62,12 @@ async def fetch_case_status(tracking_id: str, timeout: int = 15) -> dict:
     Raises TrackingNotFound if the case id is invalid/unknown,
     or TrackingApiError on network/parse failures.
     """
-    headers = {"User-Agent": USER_AGENT, "Accept": "application/json"}
+    headers = {
+        "User-Agent": USER_AGENT,
+        "Accept": "application/json, text/plain, */*",
+        "Referer": "https://contactenos.aima.gov.pt/",
+        "Origin": "https://contactenos.aima.gov.pt",
+    }
 
     async with httpx.AsyncClient(timeout=timeout, headers=headers) as client:
         try:
@@ -73,8 +78,12 @@ async def fetch_case_status(tracking_id: str, timeout: int = 15) -> dict:
                 resp = await client.get(url)
             resp.raise_for_status()
             payload = resp.json()
+        except httpx.HTTPStatusError as e:
+            raise TrackingApiError(
+                f"AIMA returned HTTP {e.response.status_code}: {e.response.text[:300]}"
+            ) from e
         except httpx.HTTPError as e:
-            raise TrackingApiError(f"HTTP error while calling AIMA API: {e}") from e
+            raise TrackingApiError(f"{type(e).__name__}: {e or 'no details from httpx'}") from e
         except ValueError as e:
             raise TrackingApiError(f"Could not parse JSON response: {e}") from e
 
