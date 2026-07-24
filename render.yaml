@@ -1,0 +1,20 @@
+services:
+  - type: worker
+    name: aima-tracking-bot
+    env: python
+    plan: starter          # free tier doesn't support persistent disks - see README
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+    envVars:
+      - key: BOT_TOKEN
+        sync: false        # you'll paste this manually in the Render dashboard
+      - key: DB_PATH
+        value: /var/data/aima_bot.sqlite3
+      - key: CHECK_HOUR_UTC
+        value: "8"
+      - key: CHECK_MINUTE_UTC
+        value: "0"
+    disk:
+      name: aima-bot-data
+      mountPath: /var/data
+      sizeGB: 1
